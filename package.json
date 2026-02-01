@@ -5,7 +5,8 @@
     "@vitejs/plugin-react": "^5.1.2",
     "agents": "^0.3.6",
     "concurrently": "^9.2.1",
-    "mcp-remote": "^0.1.37"
+    "mcp-remote": "^0.1.37",
+    "@modelcontextprotocol/sdk": "1.25.3"
   },
   "keywords": [],
   "name": "@curlmate/google-calendar-remote-mcp",
