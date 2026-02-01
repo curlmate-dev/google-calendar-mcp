@@ -90,53 +90,42 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
     //     };
     //   }
     // );
-    // this.server.registerTool(
-    //   "List-All-Notion-Pages",
-    //   {
-    //     description: "this tool lists all notion pages",
-    //     inputSchema: { }
-    //   },
-    //   async ({ }, { requestInfo }) => {
-    //     const response = await fetch("https://api.notion.com/v1/search", {
-    //       method: "POST",
-    //       headers: {
-    //         "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
-    //         "Content-Type": "application/json",
-    //         "Notion-Version": "2022-06-28"
-    //       },
-    //       body: JSON.stringify({
-    //         "filter": {
-    //           "value": "page",
-    //           "property": "object"
-    //         },
-    //         "sort":{
-    //            "direction":"ascending",
-    //            "timestamp":"last_edited_time"
-    //         }
-    //       })
-    //     })
+    this.server.registerTool(
+      "List-All-Calendars",
+      {
+        description: "this tool lists all Calendars of User",
+        inputSchema: { }
+      },
+      async ({ }, { requestInfo }) => {
+        const response = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
+            "Content-Type": "application/json",
+          }
+        })
 
-    //     if (!response.ok) {
-    //       return {
-    //         content: [
-    //           {
-    //             text: JSON.stringify(await response.text()),
-    //             type: "text"
-    //           }
-    //         ]
-    //       }
-    //     }
+        if (!response.ok) {
+          return {
+            content: [
+              {
+                text: JSON.stringify(await response.text()),
+                type: "text"
+              }
+            ]
+          }
+        }
 
-    //     return {
-    //       content: [
-    //         {
-    //           text: JSON.stringify(await response.json()),
-    //           type: "text"
-    //         }
-    //       ]
-    //     };
-    //   }
-    // );
+        return {
+          content: [
+            {
+              text: JSON.stringify(await response.json()),
+              type: "text"
+            }
+          ]
+        };
+      }
+    );
     // this.server.registerTool(
     //   "create-notion-page",
     //   {
