@@ -1,8 +1,22 @@
-# Notion Remote MCP
+# Google Calendar Remote MCP
 
 This remote MCP Agent runs in wrangler and is deployed to cloudflare worker.
 Tools implemented:  
- `list pages`, `create page`, `fetch page`, `list authenticated user`
+ `list authenticated user`, `list all calendars`,
+
+ ## Claude Desktop Config
+ ```  
+     "google-calendar": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://google-calendar-mcp.curlmate.workers.dev/mcp",
+        "--header",
+        "access-token: your Notion Access Token from https://curlmate.dev"
+      ]
+    }
+  ```
 
 ## Instruction
 
@@ -40,4 +54,4 @@ export class MyMCP extends McpAgent<Env> {
   }
 }
 ```
-# notion-mcp
+# google-calendar-mcp
