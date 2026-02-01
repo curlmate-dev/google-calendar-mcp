@@ -1,0 +1,26 @@
+{
+  "compatibility_date": "2025-03-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "GoogleCalendarMCP",
+        "name": "GoogleCalendarMCP"
+      }
+    ]
+  },
+  "main": "src/server.ts",
+  "migrations": [
+    {
+      "new_sqlite_classes": ["GoogleCalendarMCP"],
+      "tag": "v1"
+    }
+  ],
+  "observability": {
+    "logs": {
+      "enabled": false,
+      "invocation_logs": true
+    }
+  },
+  "name": "google-calendar-remote-mcp"
+}
