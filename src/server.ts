@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpAgent } from "agents/mcp";
-import { z } from "zod";
 import { zRequestInfo } from "./zod-types";
+import z from "zod/v3";
 
 
 export class GoogleCalendarMCP extends McpAgent<Env, {}> {
@@ -61,6 +61,66 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
           }
         }
         const response = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${res.accessToken}`,
+            "Content-Type": "application/json",
+          }
+        })
+
+        if (!response.ok) {
+          return {
+            content: [
+              {
+                text: JSON.stringify(await response.text()),
+                type: "text"
+              }
+            ]
+          }
+        }
+
+        return {
+          content: [
+            {
+              text: JSON.stringify(await response.json()),
+              type: "text"
+            }
+          ]
+        };
+      }
+    );
+
+    this.server.registerTool(
+      "Get-a-calnedar",
+      {
+        description: "this tool gets a Calendars of User",
+        inputSchema: { calendarId: z.string()}
+      },
+      async ({ calendarId }, { requestInfo }) => {
+        if (!requestInfo) {
+          return {
+            content: [
+              {
+                text: "requestInfo is undefined",
+                type: "text"
+              }
+            ]
+          }
+        }
+        const { headers }  = zRequestInfo.parse(requestInfo)
+        const res = await this.fetchAccessToken({ headers })
+        if ("error" in res) {
+          return {
+            content: [
+              {
+                text: res.error,
+                type: "text",
+              }
+            ]
+
+          }
+        }
+        const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${res.accessToken}`,
