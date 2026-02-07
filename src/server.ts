@@ -214,7 +214,7 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
       "Create-event-in-calendar",
       {
         description: "this tool creates events of a Calendar ",
-        inputSchema: { calendarId: z.string(), body: JsonValue}
+        inputSchema: { calendarId: z.string(), body: z.unknown()}
       },
       async ({ calendarId, body }, { requestInfo }) => {
         if (!requestInfo) {
