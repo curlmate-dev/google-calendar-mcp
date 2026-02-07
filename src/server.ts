@@ -9,6 +9,24 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
     version: "0.0.1",
   });
 
+  fetchAccessToken = async({ requestInfo }: { requestInfo: Record<string, string>}) => {
+    const url = process.env.NODE_ENV === "production" ? "https://curlmate.dev/api/token" : "http://localhost:5173/api/token"
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
+        "x-connection": requestInfo?.headers["x-connection"]
+      }
+    })
+
+    if (!response.ok) {
+      return {
+        error: await response.text()
+      }
+    }
+
+    return await response.json()
+  }
   async init() {
     // this.server.registerTool(
     //   "get-notion-page-format",
@@ -97,10 +115,11 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
         inputSchema: { }
       },
       async ({ }, { requestInfo }) => {
+        const res = await this.fetchAccessToken({ requestInfo })
         const response = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
           method: "GET",
           headers: {
-            "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
+            "Authorization": `Bearer ${res.accessToken}`,
             "Content-Type": "application/json",
           }
         })
