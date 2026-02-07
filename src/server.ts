@@ -3,6 +3,7 @@ import { McpAgent } from "agents/mcp";
 import { zRequestInfo } from "./zod-types";
 import z from "zod/v3";
 import { EventSchema } from "./event-schema";
+import { JsonValue } from "./types"
 
 
 export class GoogleCalendarMCP extends McpAgent<Env, {}> {
@@ -213,9 +214,9 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
       "Create-event-in-calendar",
       {
         description: "this tool creates events of a Calendar ",
-        inputSchema: { calendarId: z.string()}
+        inputSchema: { calendarId: z.string(), body: JsonValue}
       },
-      async ({ calendarId }, { requestInfo }) => {
+      async ({ calendarId, body }, { requestInfo }) => {
         if (!requestInfo) {
           return {
             content: [
@@ -244,7 +245,8 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
           headers: {
             "Authorization": `Bearer ${res.accessToken}`,
             "Content-Type": "application/json",
-          }
+          },
+          body: JSON.stringify(body)
         })
 
         if (!response.ok) {
