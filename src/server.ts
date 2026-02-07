@@ -149,6 +149,65 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
         };
       }
     );
+    this.server.registerTool(
+      "Get-Events-from-calendar",
+      {
+        description: "this tool gets events of a Calendar ",
+        inputSchema: { calendarId: z.string()}
+      },
+      async ({ calendarId }, { requestInfo }) => {
+        if (!requestInfo) {
+          return {
+            content: [
+              {
+                text: "requestInfo is undefined",
+                type: "text"
+              }
+            ]
+          }
+        }
+        const { headers }  = zRequestInfo.parse(requestInfo)
+        const res = await this.fetchAccessToken({ headers })
+        if ("error" in res) {
+          return {
+            content: [
+              {
+                text: res.error,
+                type: "text",
+              }
+            ]
+
+          }
+        }
+        const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${res.accessToken}`,
+            "Content-Type": "application/json",
+          }
+        })
+
+        if (!response.ok) {
+          return {
+            content: [
+              {
+                text: JSON.stringify(await response.text()),
+                type: "text"
+              }
+            ]
+          }
+        }
+
+        return {
+          content: [
+            {
+              text: JSON.stringify(await response.json()),
+              type: "text"
+            }
+          ]
+        };
+      }
+    );
 
     this.server.registerTool(
       "authenticated-user",
