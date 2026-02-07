@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpAgent } from "agents/mcp";
 import { zRequestInfo } from "./zod-types";
 import z from "zod/v3";
+import { EventSchema } from "./event-schema";
 
 
 export class GoogleCalendarMCP extends McpAgent<Env, {}> {
@@ -211,7 +212,7 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
     this.server.registerTool(
       "Create-event-in-calendar",
       {
-        description: "this tool gets events of a Calendar ",
+        description: "this tool creates events of a Calendar ",
         inputSchema: { calendarId: z.string()}
       },
       async ({ calendarId }, { requestInfo }) => {
@@ -261,6 +262,23 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
           content: [
             {
               text: JSON.stringify(await response.json()),
+              type: "text"
+            }
+          ]
+        };
+      }
+    );
+    this.server.registerTool(
+      "sample-event-resource-for-request-body-create-event",
+      {
+        description: "this tool responds with a event type",
+        inputSchema: { }
+      },
+      async ({}, { requestInfo }) => {
+        return {
+          content: [
+            {
+              text: JSON.stringify(EventSchema),
               type: "text"
             }
           ]
