@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpAgent } from "agents/mcp";
 import { z } from "zod";
+import { zRequestInfo } from "./zod-types";
 
 
 export class GoogleCalendarMCP extends McpAgent<Env, {}> {
@@ -9,13 +10,13 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
     version: "0.0.1",
   });
 
-  fetchAccessToken = async({ requestInfo }: { requestInfo: Record<string, string>}) => {
+  fetchAccessToken = async({ headers }: { headers: Record<string, string> }): Promise<{accessToken: string} | { error: string }> => {
     const url = process.env.NODE_ENV === "production" ? "https://curlmate.dev/api/token" : "http://localhost:5173/api/token"
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
-        "x-connection": requestInfo?.headers["x-connection"]
+        "Authorization": `Bearer ${headers["access-token"]}`,
+        "x-connection": headers["x-connection"]
       }
     })
 
@@ -27,87 +28,8 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
 
     return await response.json()
   }
+  
   async init() {
-    // this.server.registerTool(
-    //   "get-notion-page-format",
-    //   {
-    //     description: "get the sample page format",
-    //     inputSchema: { }
-    //   },
-    //   async ({  }) => {
-
-    //     return {
-    //       content: [
-    //         {
-    //           text: JSON.stringify({
-    //             "parent": {
-    //               "data_source_id": "d9824bdc84454327be8b5b47500af6ce"
-    //             },
-    //             "icon": {
-    //               "emoji": "🥬"
-    //             },
-    //             "cover": {
-    //               "external": {
-    //                 "url": "https://upload.wikimedia.org/wikipedia/commons/6/62/Tuscankale.jpg"
-    //               }
-    //             },
-    //             "properties": {
-    //               "Name": {
-    //                 "title": [
-    //                   {
-    //                     "text": {
-    //                       "content": "Tuscan Kale"
-    //                     }
-    //                   }
-    //                 ]
-    //               },
-    //               "Description": {
-    //                 "rich_text": [
-    //                   {
-    //                     "text": {
-    //                       "content": "A dark green leafy vegetable"
-    //                     }
-    //                   }
-    //                 ]
-    //               },
-    //               "Food group": {
-    //                 "select": {
-    //                   "name": "Vegetable"
-    //                 }
-    //               },
-    //               "Price": { "number": 2.5 }
-    //             },
-    //             "children": [
-    //               {
-    //                 "object": "block",
-    //                 "type": "heading_2",
-    //                 "heading_2": {
-    //                   "rich_text": [{ "type": "text", "text": { "content": "Lacinato kale" } }]
-    //                 }
-    //               },
-    //               {
-    //                 "object": "block",
-    //                 "type": "paragraph",
-    //                 "paragraph": {
-    //                   "rich_text": [
-    //                     {
-    //                       "type": "text",
-    //                       "text": {
-    //                         "content": "Lacinato kale is a variety of kale with a long tradition in Italian cuisine, especially that of Tuscany. It is also known as Tuscan kale, Italian kale, dinosaur kale, kale, flat back kale, palm tree kale, or black Tuscan palm.",
-    //                         "link": { "url": "https://en.wikipedia.org/wiki/Lacinato_kale" }
-    //                       }
-    //                     }
-    //                   ]
-    //                 }
-    //               }
-    //             ]
-    //           }),
-    //           type: "text"
-    //         }
-    //       ]
-    //     };
-    //   }
-    // );
     this.server.registerTool(
       "List-All-Calendars",
       {
@@ -115,7 +37,29 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
         inputSchema: { }
       },
       async ({ }, { requestInfo }) => {
-        const res = await this.fetchAccessToken({ requestInfo })
+        if (!requestInfo) {
+          return {
+            content: [
+              {
+                text: "requestInfo is undefined",
+                type: "text"
+              }
+            ]
+          }
+        }
+        const { headers }  = zRequestInfo.parse(requestInfo)
+        const res = await this.fetchAccessToken({ headers })
+        if ("error" in res) {
+          return {
+            content: [
+              {
+                text: res.error,
+                type: "text",
+              }
+            ]
+
+          }
+        }
         const response = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
           method: "GET",
           headers: {
@@ -145,81 +89,7 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
         };
       }
     );
-    // this.server.registerTool(
-    //   "create-notion-page",
-    //   {
-    //     description: "this tool lists all notion pages",
-    //     inputSchema: {  pageData: z.string()}
-    //   },
-    //   async ({  pageData }, { requestInfo }) => {
-    //     const response = await fetch("https://api.notion.com/v1/pages", {
-    //       method: "POST",
-    //       headers: {
-    //         "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
-    //         "Content-Type": "application/json",
-    //         "Notion-Version": "2022-06-28"
-    //       },
-    //       body: pageData
-    //     })
 
-    //     if (!response.ok) {
-    //       return {
-    //         content: [
-    //           {
-    //             text: JSON.stringify(await response.text()),
-    //             type: "text"
-    //           }
-    //         ]
-    //       }
-    //     }
-
-    //     return {
-    //       content: [
-    //         {
-    //           text: JSON.stringify(await response.json()),
-    //           type: "text"
-    //         }
-    //       ]
-    //     };
-    //   }
-    // );
-    // this.server.registerTool(
-    //   "fetch-notion-page",
-    //   {
-    //     description: "this tool fetches a notion page",
-    //     inputSchema: { pageId: z.string()}
-    //   },
-    //   async ({ pageId }, { requestInfo }) => {
-    //     const response = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
-    //       method: "GET",
-    //       headers: {
-    //         "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
-    //         "Content-Type": "application/json",
-    //         "Notion-Version": "2022-06-28"
-    //       }
-    //     })
-
-    //     if (!response.ok) {
-    //       return {
-    //         content: [
-    //           {
-    //             text: JSON.stringify(await response.text()),
-    //             type: "text"
-    //           }
-    //         ]
-    //       }
-    //     }
-
-    //     return {
-    //       content: [
-    //         {
-    //           text: JSON.stringify(await response.json()),
-    //           type: "text"
-    //         }
-    //       ]
-    //     };
-    //   }
-    // );
     this.server.registerTool(
       "authenticated-user",
       {
@@ -227,10 +97,33 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
         inputSchema: { }
       },
       async ({}, {requestInfo}) => {
+        if (!requestInfo) {
+          return {
+            content: [
+              {
+                text: "requestInfo is undefined",
+                type: "text"
+              }
+            ]
+          }
+        }
+        const { headers }  = zRequestInfo.parse(requestInfo)
+        const res = await this.fetchAccessToken({ headers })
+        if ("error" in res) {
+          return {
+            content: [
+              {
+                text: res.error,
+                type: "text",
+              }
+            ]
+
+          }
+        }
         const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo`, {
           method: "GET",
           headers: {
-            "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
+            "Authorization": `Bearer ${res.accessToken}`,
             "Content-Type": "application/json",
           }
         })
