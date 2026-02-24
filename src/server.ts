@@ -1,10 +1,48 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpAgent } from "agents/mcp";
-import { zRequestInfo } from "./zod-types";
-import z from "zod/v3";
+import z from "zod";
 import { EventSchema } from "./event-schema";
-import { JsonValue } from "./types"
 
+const zAccessTokenResponse = z.object({
+  accessToken: z.string()
+})
+
+const CURLMATE_BASE_URL = "https://api.curlmate.dev";
+
+const getAccessToken = async({ jwt, connection }: { jwt: string | undefined, connection: string | undefined }): Promise<{accessToken: string} | { error: string, status: number }> => {
+  if (!jwt) {
+    return {
+      error: "JWT is missing in request headers",
+      status: 401   
+    }
+  }
+  
+  if (!connection) {
+    return {
+      error: "Connection is missing in request headers",
+      status: 400   
+    }
+  }
+
+  const res = await fetch(`${CURLMATE_BASE_URL}/token`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${jwt}`,
+      "x-connection": connection  
+    }
+  })
+
+  if (!res.ok) {
+    return {
+      error: await res.text(),
+      status: res.status,
+    }
+  }
+
+  const { accessToken } = zAccessTokenResponse.parse(await res.json())
+  return { accessToken }
+}
 
 export class GoogleCalendarMCP extends McpAgent<Env, {}> {
   server = new McpServer({
@@ -12,24 +50,7 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
     version: "0.0.1",
   });
 
-  fetchAccessToken = async({ headers }: { headers: Record<string, string> }): Promise<{accessToken: string} | { error: string }> => {
-    const url = process.env.NODE_ENV === "production" ? "https://curlmate.dev/api/token" : "http://localhost:5173/api/token"
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${headers["access-token"]}`,
-        "x-connection": headers["x-connection"]
-      }
-    })
 
-    if (!response.ok) {
-      return {
-        error: await response.text()
-      }
-    }
-
-    return await response.json()
-  }
   
   async init() {
     this.server.registerTool(
@@ -39,23 +60,14 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
         inputSchema: { }
       },
       async ({ }, { requestInfo }) => {
-        if (!requestInfo) {
-          return {
-            content: [
-              {
-                text: "requestInfo is undefined",
-                type: "text"
-              }
-            ]
-          }
-        }
-        const { headers }  = zRequestInfo.parse(requestInfo)
-        const res = await this.fetchAccessToken({ headers })
+        const jwt = requestInfo?.headers["access-token"] as string | undefined;
+        const connection = requestInfo?.headers["x-connection"] as string | undefined;
+        const res = await getAccessToken({ jwt, connection });
         if ("error" in res) {
           return {
             content: [
               {
-                text: res.error,
+                text: JSON.stringify(res),
                 type: "text",
               }
             ]
@@ -99,23 +111,14 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
         inputSchema: { calendarId: z.string()}
       },
       async ({ calendarId }, { requestInfo }) => {
-        if (!requestInfo) {
-          return {
-            content: [
-              {
-                text: "requestInfo is undefined",
-                type: "text"
-              }
-            ]
-          }
-        }
-        const { headers }  = zRequestInfo.parse(requestInfo)
-        const res = await this.fetchAccessToken({ headers })
+        const jwt = requestInfo?.headers["access-token"] as string | undefined;
+        const connection = requestInfo?.headers["x-connection"] as string | undefined;
+        const res = await getAccessToken({ jwt, connection });
         if ("error" in res) {
           return {
             content: [
               {
-                text: res.error,
+                text: JSON.stringify(res),
                 type: "text",
               }
             ]
@@ -158,23 +161,14 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
         inputSchema: { calendarId: z.string()}
       },
       async ({ calendarId }, { requestInfo }) => {
-        if (!requestInfo) {
-          return {
-            content: [
-              {
-                text: "requestInfo is undefined",
-                type: "text"
-              }
-            ]
-          }
-        }
-        const { headers }  = zRequestInfo.parse(requestInfo)
-        const res = await this.fetchAccessToken({ headers })
+        const jwt = requestInfo?.headers["access-token"] as string | undefined;
+        const connection = requestInfo?.headers["x-connection"] as string | undefined;
+        const res = await getAccessToken({ jwt, connection });
         if ("error" in res) {
           return {
             content: [
               {
-                text: res.error,
+                text: JSON.stringify(res),
                 type: "text",
               }
             ]
@@ -214,26 +208,17 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
       "Create-event-in-calendar",
       {
         description: "this tool creates events of a Calendar ",
-        inputSchema: { calendarId: z.string(), body: z.record(z.any())}
+        inputSchema: { calendarId: z.string(), body: z.record(z.string(), z.union([z.string(), z.unknown()]))}
       },
       async ({ calendarId, body }, { requestInfo }) => {
-        if (!requestInfo) {
-          return {
-            content: [
-              {
-                text: "requestInfo is undefined",
-                type: "text"
-              }
-            ]
-          }
-        }
-        const { headers }  = zRequestInfo.parse(requestInfo)
-        const res = await this.fetchAccessToken({ headers })
+        const jwt = requestInfo?.headers["access-token"] as string | undefined;
+        const connection = requestInfo?.headers["x-connection"] as string | undefined;
+        const res = await getAccessToken({ jwt, connection });
         if ("error" in res) {
           return {
             content: [
               {
-                text: res.error,
+                text: JSON.stringify(res),
                 type: "text",
               }
             ]
@@ -295,23 +280,14 @@ export class GoogleCalendarMCP extends McpAgent<Env, {}> {
         inputSchema: { }
       },
       async ({}, {requestInfo}) => {
-        if (!requestInfo) {
-          return {
-            content: [
-              {
-                text: "requestInfo is undefined",
-                type: "text"
-              }
-            ]
-          }
-        }
-        const { headers }  = zRequestInfo.parse(requestInfo)
-        const res = await this.fetchAccessToken({ headers })
+        const jwt = requestInfo?.headers["access-token"] as string | undefined;
+        const connection = requestInfo?.headers["x-connection"] as string | undefined;
+        const res = await getAccessToken({ jwt, connection });
         if ("error" in res) {
           return {
             content: [
               {
-                text: res.error,
+                text: JSON.stringify(res),
                 type: "text",
               }
             ]
